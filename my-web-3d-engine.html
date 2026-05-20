@@ -5,69 +5,58 @@
     <title>My-Web-3D-Engine</title>
     <style>
         body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
-        #ui { position: absolute; top: 0; width: 100%; padding: 15px; background: #111; display: flex; gap: 10px; border-bottom: 2px solid #ff4757; }
+        #toolbar { position: absolute; top: 0; width: 100%; height: 50px; background: #222; display: flex; align-items: center; gap: 15px; padding: 0 20px; z-index: 10; }
         canvas { width: 100vw; height: 100vh; display: block; }
-        button { padding: 8px 15px; cursor: pointer; background: #ff4757; border: none; color: white; border-radius: 4px; }
-        button:hover { background: #e84118; }
+        button { padding: 8px 15px; cursor: pointer; background: #ff4757; border: none; color: white; }
     </style>
 </head>
 <body>
 
-<div id="ui">
+<div id="toolbar">
     <strong>My-Web-3D-Engine</strong>
-    <button onclick="addObject('Cube')">কিউব তৈরি করুন</button>
-    <button onclick="addObject('Sphere')">গোলক তৈরি করুন</button>
-    <button onclick="saveProject()">প্রজেক্ট সেভ করুন</button>
-    <button onclick="loadProject()">প্রজেক্ট লোড করুন</button>
+    <button onclick="Engine.addObject('Cube')">Add Cube</button>
+    <button onclick="Engine.save()">Save Project</button>
 </div>
-
 <canvas id="renderCanvas"></canvas>
 
 <script>
-    // ১. ইঞ্জিন কোর ইনিশিয়ালাইজেশন
-    const canvas = document.getElementById('renderCanvas');
-    const gl = canvas.getContext('webgl');
-    let projectData = { objects: [] };
+    // ইঞ্জিন কোর: এই অংশটি সব ম্যানেজ করবে
+    const Engine = {
+        gl: document.getElementById('renderCanvas').getContext('webgl'),
+        objects: [],
+        
+        init: function() {
+            this.canvas = document.getElementById('renderCanvas');
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            this.gl.clearColor(0.1, 0.1, 0.1, 1.0);
+            this.loop();
+        },
 
-    function init() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        gl.clearColor(0.1, 0.1, 0.1, 1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        console.log("ইঞ্জিন প্রস্তুত।");
-    }
+        addObject: function(type) {
+            this.objects.push({ type: type, x: Math.random(), y: Math.random() });
+            console.log("Object Added:", type);
+        },
 
-    // ২. অবজেক্ট ম্যানেজমেন্ট
-    function addObject(type) {
-        const obj = { id: Date.now(), type, x: Math.random(), y: Math.random() };
-        projectData.objects.push(obj);
-        alert(type + " যোগ করা হয়েছে। মোট অবজেক্ট: " + projectData.objects.length);
-        renderScene();
-    }
+        loop: function() {
+            this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+            // এখানে সমস্ত ফিজিক্স ও রেন্ডারিং আপডেট হবে
+            requestAnimationFrame(() => this.loop());
+        },
 
-    // ৩. রেন্ডারিং সিস্টেম (পাওয়ারফুল রেন্ডারার)
-    function renderScene() {
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        // এখানে WebGL দিয়ে ৩ডি অবজেক্ট ড্র করার লজিক সম্পন্ন
-    }
+        save: async function() {
+            const data = JSON.stringify(this.objects);
+            await fetch('http://localhost:3000/api/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: data
+            });
+            alert("Project Saved!");
+        }
+    };
 
-    // ৪. ব্যাকএন্ড ডাটাবেজ অপারেশন
-    async function saveProject() {
-        const res = await fetch('http://localhost:3000/api/save', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(projectData)
-        });
-        alert("সার্ভারে সেভ হয়েছে!");
-    }
-
-    async function loadProject() {
-        const res = await fetch('http://localhost:3000/api/load');
-        projectData = await res.json();
-        alert("প্রজেক্ট লোড হয়েছে!");
-    }
-
-    init();
+    // ইঞ্জিন স্টার্ট
+    Engine.init();
 </script>
 </body>
 </html>
