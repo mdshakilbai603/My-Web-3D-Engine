@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <title>My Web 3D Engine</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+
+    <script id="engine-script">
+        // ১. ইঞ্জিন সেটআপ
+        const canvas = document.getElementById('renderCanvas');
+        const gl = canvas.getContext('webgl');
+
+        if (!gl) { alert("আপনার ব্রাউজার WebGL সাপোর্ট করে না!"); }
+
+        // ২. ৩ডি রেন্ডারিং লজিক (ইঞ্জিন কোর)
+        function initEngine() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            gl.clearColor(0.1, 0.1, 0.1, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+        }
+
+        // ৩. গেম লজিক (এখানেই আপনি কোড লিখবেন)
+        function gameLoop() {
+            // গেমের লজিক ও রেন্ডারিং এখানে হবে
+            requestAnimationFrame(gameLoop);
+        }
+
+        initEngine();
+        gameLoop();
+
+        // ৪. ব্যাকএন্ড কানেক্টিভিটি স্ট্রাকচার (এপিআই কল)
+        async function sendGameData(data) {
+            const response = await fetch('/api/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return response.json();
+        }
+    </script>
+</body>
+</html>
