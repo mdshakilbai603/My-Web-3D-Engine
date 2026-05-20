@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <title>My-Web-3D-Engine</title>
+    <style>
+        body { margin: 0; background: #050505; color: #fff; font-family: sans-serif; }
+        canvas { display: block; width: 100vw; height: 90vh; }
+        #ui { padding: 10px; background: #222; text-align: center; }
+    </style>
+</head>
+<body>
+    <div id="ui">My-Web-3D-Engine | <button onclick="saveProject()">প্রজেক্ট সেভ করুন</button></div>
+    <canvas id="renderCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('renderCanvas');
+        const gl = canvas.getContext('webgl');
+        let gameData = { version: "1.0", objects: [] };
+
+        // ইঞ্জিন ইনিশিয়াল
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight * 0.9;
+            console.log("My-Web-3D-Engine স্টার্ট হয়েছে...");
+        }
+
+        // ডাটাবেজে সেভ করার ফাংশন
+        async function saveProject() {
+            const response = await fetch('http://localhost:3000/api/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(gameData)
+            });
+            const result = await response.json();
+            alert(result.message);
+        }
+
+        init();
+    </script>
+</body>
+</html>
