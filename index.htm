@@ -3,44 +3,316 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ignite3D AI - Next-Gen No-Code Game Engine</title>
+    <title>Ignite3D AI — Next-Gen Game Engine</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    
     <style>
-        body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #0b0c10; color: #fff; display: flex; height: 100vh; overflow: hidden; }
-        #sidebar { width: 360px; background: #1f2833; padding: 20px; display: flex; flex-direction: column; box-shadow: 2px 0 15px rgba(0,0,0,0.7); z-index: 10; box-sizing: border-box; }
-        #preview-zone { flex: 1; position: relative; background: #121212; }
-        h2 { color: #66fcf1; margin-top: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
-        input, textarea, button { background: #2f3e46; border: 1px solid #45f3ff; color: #fff; padding: 12px; margin-bottom: 12px; border-radius: 6px; font-size: 14px; outline: none; box-sizing: border-box; width: 100%; }
-        input:focus, textarea:focus { border-color: #66fcf1; }
-        button { background: #45f3ff; color: #0b0c10; font-weight: bold; cursor: pointer; transition: 0.3s; border: none; text-transform: uppercase; letter-spacing: 0.5px; }
-        button:hover { background: #66fcf1; box-shadow: 0 0 12px #66fcf1; }
-        #chat-history { flex: 1; border: 1px solid #2f3e46; border-radius: 6px; padding: 12px; overflow-y: auto; background: #121212; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 14px; border-radius: 6px; max-width: 85%; font-size: 13px; line-height: 1.4; }
-        .user { background: #45f3ff; color: #0b0c10; align-self: flex-end; font-weight: 500; }
-        .ai { background: #2f3e46; color: #fff; align-self: flex-start; border-left: 4px solid #66fcf1; }
-        #file-label { background: #1f2833; border: 2px dashed #66fcf1; padding: 12px; text-align: center; cursor: pointer; display: block; margin-bottom: 12px; border-radius: 6px; font-size: 13px; font-weight: bold; transition: 0.3s; color: #66fcf1; }
-        #file-label:hover { background: rgba(102, 252, 241, 0.1); }
+        :root {
+            --bg-color: #0d0e12;
+            --panel-bg: rgba(255, 255, 255, 0.06);
+            --accent-color: #ffffff;
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-glow: rgba(255, 255, 255, 0.15);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        /* ফুল-স্ক্রিন ৩ডি প্রিভিউ জোন */
+        #preview-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* গ্লোবাল ওভারলে ইন্টারফেস */
+        .interface-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none; /* ৩ডি স্ক্রিন ড্র্যাগ করার সুবিধা রাখার জন্য */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+            padding: 30px;
+        }
+
+        /* আল্ট্রা-মডার্ন মিনিমাল লোগো হেডার */
+        header {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #ffffff 0%, #a3a3a3 100%);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #000;
+            font-size: 16px;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        /* মডার্ন ফ্লোটিং চ্যাট ইন্টারফেস (ChatGPT স্টাইল) */
+        .chat-wrapper {
+            pointer-events: auto;
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto;
+            background: backdrop-filter blur(20px) url();
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: all 0.3s ease;
+        }
+
+        /* চ্যাট হিস্ট্রি ডিসপ্লে */
+        #chat-history {
+            max-height: 180px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 5px;
+        }
+
+        /* কাস্টম স্ক্রোলবার */
+        #chat-history::-webkit-scrollbar {
+            width: 4px;
+        }
+        #chat-history::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .msg {
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 10px 16px;
+            border-radius: 14px;
+            max-width: 85%;
+        }
+
+        .ai {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-color);
+            align-self: flex-start;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .user {
+            background: #ffffff;
+            color: #0b0c10;
+            align-self: flex-end;
+            font-weight: 500;
+        }
+
+        /* ইনপুট ফিল্ড ও চ্যাট কম্বিনেশন */
+        .meta-inputs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .meta-inputs input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .meta-inputs input:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .main-prompt-area {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 5px 10px 5px 15px;
+        }
+
+        .main-prompt-area:focus-within {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .main-prompt-area textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            resize: none;
+            padding: 10px 0;
+            font-family: inherit;
+        }
+
+        /* গ্লোয়িং অ্যাকশন বাটন্স */
+        .action-btn {
+            background: #ffffff;
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: #e2e8f0;
+            transform: scale(1.02);
+        }
+
+        .control-panel-mini {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #file-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: 0.2s;
+        }
+
+        #file-label:hover {
+            color: #fff;
+        }
+
         #file-input { display: none; }
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; color: #66fcf1; display: none; z-index: 100; font-weight: bold; text-shadow: 0 0 15px #66fcf1; background: rgba(11,12,16,0.9); padding: 20px; border-radius: 8px; border: 1px solid #66fcf1; text-align: center; }
+
+        /* প্রিমিয়াম ব্লার লোডিং স্ক্রিন */
+        #loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 14, 18, 0.7);
+            backdrop-filter: blur(15px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="loading">🚀 Ignite3D AI ইঞ্জিন গেম মেকানিক্স আপডেট করছে...<br><span style="font-size: 13px; color: #aaa; font-weight: normal;">অনুগ্রহ করে অপেক্ষা করুন...</span></div>
-    <div id="sidebar">
-        <h2>Ignite3D AI 🔥</h2>
-        <input type="text" id="game-name" placeholder="গেমের নাম লিখুন...">
-        <textarea id="game-desc" rows="2" placeholder="গেমের সংক্ষিপ্ত ডেসক্রিপশন..."></textarea>
-        <div id="chat-history">
-            <div class="msg ai">ইঞ্জিন সম্পূর্ণ সচল! গেমের নাম দিন, যেকোনো সংখ্যক .glb থ্রিডি মডেল আপলোড করুন এবং নিচে সম্পূর্ণ গেমের আইডিয়া বা এডিট কমান্ড লিখে সাবমিট করুন।</div>
-        </div>
-        <label id="file-label" for="file-input">➕ আপলোড থ্রিডি মডেল (.glb)</label>
-        <input type="file" id="file-input" accept=".glb" multiple>
-        <textarea id="ai-prompt" rows="3" placeholder="সম্পূর্ণ গেমের আইডিয়া লিখুন বা পরবর্তীতে এডিট করার কমান্ড দিন..."></textarea>
-        <button onclick="sendToAI()">মেকানিক্স জেনারেট / এডিট</button>
-        <button style="background: #ff4757; color: white; margin-top: 5px;" onclick="downloadAPK()">📥 APK ডাউনলোড করুন</button>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <div style="font-size: 16px; font-weight: 500; letter-spacing: 0.5px;">Ignite3D AI Engine Engine Syncing...</div>
     </div>
+
     <div id="preview-zone"></div>
+
+    <div class="interface-container">
+        
+        <header>
+            <div class="logo-icon">I</div>
+            <div class="logo-text">Ignite3D <span style="font-weight:300; color:var(--text-muted);">AI</span></div>
+        </header>
+
+        <div class="chat-wrapper">
+            
+            <div id="chat-history">
+                <div class="msg ai">ইঞ্জিন সচল আছে। গেমের নাম, স্ক্রিপ্ট এবং থ্রিডি ডেসক্রিপশন সরাসরি নিচের বক্সে লিখুন। প্রিভিউ ব্যাকগ্রাউন্ডে জেনারেট হবে।</div>
+            </div>
+
+            <div class="meta-inputs">
+                <input type="text" id="game-name" placeholder="গেমের নাম...">
+                <input type="text" id="game-desc" placeholder="সংক্ষিপ্ত ডেসক্রিপশন (ঐচ্ছিক)...">
+            </div>
+
+            <div class="main-prompt-area">
+                <textarea id="ai-prompt" rows="1" placeholder="এখানে গেমের ফুল আইডিয়া বা স্ক্রিপ্ট লিখুন..."></textarea>
+                <button class="action-btn" onclick="sendToAI()">Generate</button>
+            </div>
+
+            <div class="control-panel-mini">
+                <label id="file-label" for="file-input">📎 Upload .glb Model</label>
+                <input type="file" id="file-input" accept=".glb" multiple>
+                
+                <button style="background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.1);" class="action-btn" onclick="downloadAPK()">Export APK</button>
+            </div>
+
+        </div>
+    </div>
+
     <script src="script.j"></script>
+    
+    <script>
+        // টেক্সট এরিয়া অটো-রিসাইজ মেকানিজম (ChatGPT এর মতো)
+        const tx = document.getElementById('ai-prompt');
+        tx.addEventListener("input", OnInput, false);
+        function OnInput() {
+            this.style.height = "auto";
+            this.style.height = (this.scrollHeight - 20) + "px";
+        }
+    </script>
 </body>
 </html>
