@@ -8,45 +8,39 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #0b0c10; color: #fff; display: flex; height: 100vh; overflow: hidden; }
-        #sidebar { width: 350px; background: #1f2833; padding: 20px; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.5); z-index: 10; }
+        #sidebar { width: 360px; background: #1f2833; padding: 20px; display: flex; flex-direction: column; box-shadow: 2px 0 15px rgba(0,0,0,0.7); z-index: 10; box-sizing: border-box; }
         #preview-zone { flex: 1; position: relative; background: #121212; }
-        h2 { color: #66fcf1; margin-top: 0; font-size: 24px; text-transform: uppercase; }
-        input, textarea, button { background: #2f3e46; border: 1px solid #45f3ff; color: #fff; padding: 10px; margin-bottom: 12px; border-radius: 5px; font-size: 14px; outline: none; }
+        h2 { color: #66fcf1; margin-top: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
+        input, textarea, button { background: #2f3e46; border: 1px solid #45f3ff; color: #fff; padding: 12px; margin-bottom: 12px; border-radius: 6px; font-size: 14px; outline: none; box-sizing: border-box; width: 100%; }
         input:focus, textarea:focus { border-color: #66fcf1; }
-        button { background: #45f3ff; color: #0b0c10; font-weight: bold; cursor: pointer; transition: 0.3s; border: none; }
-        button:hover { background: #66fcf1; box-shadow: 0 0 10px #66fcf1; }
-        #chat-history { flex: 1; border: 1px solid #2f3e46; border-radius: 5px; padding: 10px; overflow-y: auto; background: #121212; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .msg { padding: 8px 12px; border-radius: 5px; max-width: 80%; font-size: 13px; }
-        .user { background: #45f3ff; color: #0b0c10; align-self: flex-end; }
-        .ai { background: #2f3e46; color: #fff; align-self: flex-start; border-left: 3px solid #66fcf1; }
-        #file-label { background: #1f2833; border: 1px dashed #66fcf1; padding: 10px; text-align: center; cursor: pointer; display: block; margin-bottom: 12px; border-radius: 5px; font-size: 13px; }
+        button { background: #45f3ff; color: #0b0c10; font-weight: bold; cursor: pointer; transition: 0.3s; border: none; text-transform: uppercase; letter-spacing: 0.5px; }
+        button:hover { background: #66fcf1; box-shadow: 0 0 12px #66fcf1; }
+        #chat-history { flex: 1; border: 1px solid #2f3e46; border-radius: 6px; padding: 12px; overflow-y: auto; background: #121212; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px 14px; border-radius: 6px; max-width: 85%; font-size: 13px; line-height: 1.4; }
+        .user { background: #45f3ff; color: #0b0c10; align-self: flex-end; font-weight: 500; }
+        .ai { background: #2f3e46; color: #fff; align-self: flex-start; border-left: 4px solid #66fcf1; }
+        #file-label { background: #1f2833; border: 2px dashed #66fcf1; padding: 12px; text-align: center; cursor: pointer; display: block; margin-bottom: 12px; border-radius: 6px; font-size: 13px; font-weight: bold; transition: 0.3s; color: #66fcf1; }
+        #file-label:hover { background: rgba(102, 252, 241, 0.1); }
         #file-input { display: none; }
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; color: #66fcf1; display: none; z-index: 100; font-weight: bold; text-shadow: 0 0 10px #66fcf1; }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; color: #66fcf1; display: none; z-index: 100; font-weight: bold; text-shadow: 0 0 15px #66fcf1; background: rgba(11,12,16,0.9); padding: 20px; border-radius: 8px; border: 1px solid #66fcf1; text-align: center; }
     </style>
 </head>
 <body>
-
-    <div id="loading">AI জেনারেট করছে... অনুগ্রহ করে অপেক্ষা করুন...</div>
-
+    <div id="loading">🚀 Ignite3D AI ইঞ্জিন গেম মেকানিক্স আপডেট করছে...<br><span style="font-size: 13px; color: #aaa; font-weight: normal;">অনুগ্রহ করে অপেক্ষা করুন...</span></div>
     <div id="sidebar">
         <h2>Ignite3D AI 🔥</h2>
         <input type="text" id="game-name" placeholder="গেমের নাম লিখুন...">
         <textarea id="game-desc" rows="2" placeholder="গেমের সংক্ষিপ্ত ডেসক্রিপশন..."></textarea>
-        
         <div id="chat-history">
-            <div class="msg ai">স্বাগতম! গেমের নাম, ডেসক্রিপশন দিন এবং আপনার আইডিয়াটি নিচে চ্যাটে লিখুন। যত খুশি .glb ফাইল আপলোড করতে পারেন।</div>
+            <div class="msg ai">ইঞ্জিন সম্পূর্ণ সচল! গেমের নাম দিন, যেকোনো সংখ্যক .glb থ্রিডি মডেল আপলোড করুন এবং নিচে সম্পূর্ণ গেমের আইডিয়া বা এডিট কমান্ড লিখে সাবমিট করুন।</div>
         </div>
-
-        <label id="file-label" for="file-input">➕ আপলোড করুন (.glb থ্রিডি ফাইল)</label>
+        <label id="file-label" for="file-input">➕ আপলোড থ্রিডি মডেল (.glb)</label>
         <input type="file" id="file-input" accept=".glb" multiple>
-
-        <textarea id="ai-prompt" rows="3" placeholder="সম্পূর্ণ গেমের আইডিয়া বা এডিট করার কথা এখানে লিখুন (যেমন: Free Fire এর মতো শুটার গেম)..."></textarea>
-        <button onclick="sendToAI()">গেম জেনারেট / এডিট করুন</button>
-        <button style="background: #ff4757; color: white;" onclick="downloadAPK()">📥 APK ডাউনলোড করুন</button>
+        <textarea id="ai-prompt" rows="3" placeholder="সম্পূর্ণ গেমের আইডিয়া লিখুন বা পরবর্তীতে এডিট করার কমান্ড দিন..."></textarea>
+        <button onclick="sendToAI()">মেকানিক্স জেনারেট / এডিট</button>
+        <button style="background: #ff4757; color: white; margin-top: 5px;" onclick="downloadAPK()">📥 APK ডাউনলোড করুন</button>
     </div>
-
     <div id="preview-zone"></div>
-
-    <script src="script.js"></script>
+    <script src="script.j"></script>
 </body>
 </html>
