@@ -1,13 +1,13 @@
-// Render.com-এ আপনার ব্যাকএন্ড ডিপ্লয় করার পর সেই ইউআরএলটি এখানে বসাবেন
-const BACKEND_URL = "https://your-backend-name.onrender.com"; 
+const BACKEND_URL = ""; // অটো-ডিটেকশন রুট পাথ মেকানিজম
 
 let scene, camera, renderer, loader;
 let uploadedFiles = [];
 let currentGameState = {};
 
-// Three.js 3D প্রিভিউ জোন সেটআপ
 function init3D() {
     const zone = document.getElementById('preview-zone');
+    if (!zone) return;
+    
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x121212);
 
@@ -18,10 +18,9 @@ function init3D() {
     renderer.setSize(zone.clientWidth, zone.clientHeight);
     zone.appendChild(renderer.domElement);
 
-    // লাইটিং
-    const light = new THREE.AmbientLight(0xffffff, 0.8);
+    const light = new THREE.AmbientLight(0xffffff, 0.9);
     scene.add(light);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
     dirLight.position.set(5, 10, 7);
     scene.add(dirLight);
 
@@ -37,7 +36,7 @@ function init3D() {
         requestAnimationFrame(animate);
         scene.traverse((child) => {
             if (child.isMesh && child.name !== "ground") {
-                child.rotation.y += 0.005; // থ্রিডি ফাইলগুলো আলতো করে ঘুরবে
+                child.rotation.y += 0.004;
             }
         });
         renderer.render(scene, camera);
@@ -45,18 +44,18 @@ function init3D() {
     animate();
 }
 
-// .glb ফাইল আপলোড হ্যান্ডলার
 document.getElementById('file-input').addEventListener('change', function(e) {
     const files = e.target.files;
     for(let file of files) {
         uploadedFiles.push(file.name);
-        appendChat(file.name + " আপলোড হয়েছে!", "user");
+        appendChat(file.name + " সফলভাবে আপলোড হয়েছে!", "user");
 
-        // Three.js প্রিভিউতে লোড করা (ভার্চুয়াল লজিক)
         const url = URL.createObjectURL(file);
         loader.load(url, function(gltf) {
-            gltf.scene.position.set((Math.random() - 0.5) * 3, 0, (Math.random() - 0.5) * 3);
+            gltf.scene.position.set((Math.random() - 0.5) * 4, 0, (Math.random() - 0.5) * 4);
             scene.add(gltf.scene);
+        }, undefined, function(error) {
+            console.error("3D Model loading failed:", error);
         });
     }
 });
@@ -70,13 +69,12 @@ function appendChat(text, sender) {
     chat.scrollTop = chat.scrollHeight;
 }
 
-// AI-এর কাছে আইডিয়া পাঠানো বা এডিট করা
 async function sendToAI() {
     const prompt = document.getElementById('ai-prompt').value;
     const name = document.getElementById('game-name').value;
     const desc = document.getElementById('game-desc').value;
 
-    if(!prompt) return alert("দয়া করে গেমের আইডিয়া লিখুন!");
+    if(!prompt) return alert("দয়া করে গেমের আইডিয়া বা এডিট কমান্ড লিখুন!");
 
     appendChat(prompt, "user");
     document.getElementById('ai-prompt').value = "";
@@ -96,21 +94,20 @@ async function sendToAI() {
         });
 
         const data = await response.json();
-        currentGameState = data.game_state; // সার্ভার থেকে পাওয়া নতুন গেম স্টেট সেভ রাখা
-        appendChat("AI: " + data.ai_comment, "ai");
+        currentGameState = data.game_state;
+        appendChat("Ignite3D AI: " + data.ai_comment, "ai");
     } catch (error) {
-        appendChat("AI: দুঃখিত, ব্যাকএন্ড সার্ভারের সাথে যোগাযোগ করা যাচ্ছে না।", "ai");
+        appendChat("Ignite3D Core Error: সার্ভার মেকানিজম রেসপন্স করছে না।", "ai");
     } finally {
         document.getElementById('loading').style.display = "none";
     }
 }
 
-// APK ডাউনলোডের রিকোয়েস্ট
 function downloadAPK() {
     if (!currentGameState.game_name) {
-        return alert("প্রথমে গেম জেনারেট করুন, তারপর APK বিল্ড করুন!");
+        return alert("প্রথমে গেম জেনারেট বা এডিট করুন, তারপর APK এক্সপোর্ট করুন!");
     }
-    alert("আপনার গেমের আর্কিটেকচার কমপ্লিট! 'Ignite3D ক্লাউড কম্পাইলার' ব্যাকএন্ডে হাই-গ্রাফিক্স কোড যুক্ত করছে। APK ডাউনলোডের লিংক ইমেইলে বা এখানে তৈরি হচ্ছে...");
+    alert("আপনার কাস্টম হাই-গ্রাফিক্স কোড কম্পাইল করা হচ্ছে। ক্লাউড সার্ভার সোর্স কোড ডাউনলোড ফাইল প্রস্তুত করছে...");
     window.open(`${BACKEND_URL}/download-build?game=${currentGameState.game_name}`, '_blank');
 }
 
