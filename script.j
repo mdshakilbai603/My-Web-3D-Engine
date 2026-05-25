@@ -1,4 +1,4 @@
-const BACKEND_URL = ""; // অটো-ডিটেকশন রুট পাথ মেকানিজম
+const BACKEND_URL = ""; 
 
 let scene, camera, renderer, loader, controls;
 let uploadedFiles = [];
@@ -9,10 +9,10 @@ function init3D() {
     if (!zone) return;
     
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0d0e12);
+    scene.background = new THREE.Color(0x1a1c23); // মডার্ন ডার্ক ব্যাকগ্রাউন্ড
 
     camera = new THREE.PerspectiveCamera(60, zone.clientWidth / zone.clientHeight, 0.1, 1000);
-    camera.position.set(0, 5, 10);
+    camera.position.set(0, 15, 25);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setSize(zone.clientWidth, zone.clientHeight);
@@ -20,22 +20,32 @@ function init3D() {
     renderer.shadowMap.enabled = true;
     zone.appendChild(renderer.domElement);
 
-    // লাইটিং
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    // লাইটিং (সিন সুন্দর করার জন্য)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
     
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(10, 20, 15);
-    scene.add(dirLight);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    sunLight.position.set(20, 40, 20);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
 
-    // গেমের ভার্চুয়াল গ্রাউন্ড ফিল্ড গ্রিড
-    const gridHelper = new THREE.GridHelper(60, 60, 0x444444, 0x222222);
-    gridHelper.position.y = 0;
-    scene.add(gridHelper);
+    // মেইন গ্রাউন্ড (মাটি)
+    const groundGeo = new THREE.PlaneGeometry(200, 200);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.8 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    ground.name = "ground";
+    scene.add(ground);
+
+    // গ্রিড হেল্পার
+    const grid = new THREE.GridHelper(200, 50, 0x3f4456, 0x282c37);
+    grid.position.y = 0.01;
+    scene.add(grid);
 
     loader = new THREE.GLTFLoader();
 
-    // OrbitControls লোড করা (ঘুরিয়ে দেখার জন্য)
+    // অল-ডিভাইস স্ক্রিন কন্ট্রোল (OrbitControls)
     if (typeof THREE.OrbitControls !== 'undefined') {
         setupControls();
     } else {
@@ -63,21 +73,20 @@ function setupControls() {
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 2 - 0.05;
+    controls.maxPolarAngle = Math.PI / 2 - 0.01;
 }
 
-// গিটহাব ফাইল আপলোড হ্যান্ডলার
+// গিটহাব ফাইল আপলোড
 document.getElementById('file-input').addEventListener('change', function(e) {
     const files = e.target.files;
     for(let file of files) {
         uploadedFiles.push(file.name);
-        appendChat(file.name + " সফলভাবে আপলোড হয়েছে!", "user");
-
+        appendChat(file.name + " আপলোড হয়েছে!", "user");
         const url = URL.createObjectURL(file);
         loader.load(url, function(gltf) {
-            const model = gltf.scene;
-            model.position.set((Math.random() - 0.5) * 5, 0, (Math.random() - 0.5) * 5);
-            scene.add(model);
+            const m = gltf.scene;
+            m.position.set((Math.random()-0.5)*20, 0, (Math.random()-0.5)*20);
+            scene.add(m);
         });
     }
 });
@@ -92,58 +101,133 @@ function appendChat(text, sender) {
     chat.scrollTop = chat.scrollHeight;
 }
 
-// 🤖 এআই প্রম্পট অ্যানালাইসিস এবং রিয়েল-টাইম থ্রিডি অবজেক্ট জেনারেশন ইঞ্জিন
-function executeAIVisualCommand(prompt) {
-    const text = prompt.toLowerCase();
-    
-    // ১. ইউজার যদি বক্স/কিউব বা ঘর তৈরি করতে বলে
-    if (text.includes("box") || text.includes("cube") || text.includes("বক্স") || text.includes("বাক্স")) {
-        const geometry = new THREE.BoxGeometry(2, 2, 2);
-        let color = 0xff4757; // ডিফল্ট লাল রঙ
-        
-        if (text.includes("blue") || text.includes("নীল")) color = 0x00d2d3;
-        if (text.includes("green") || text.includes("সবুজ")) color = 0x10ac84;
-        if (text.includes("white") || text.includes("সাদা")) color = 0xffffff;
-        
-        const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 });
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set((Math.random() - 0.5) * 6, 1, (Math.random() - 0.5) * 6);
-        scene.add(cube);
-        return "ইঞ্জিন আপনার কমান্ড অনুযায়ী থ্রিডি কিউব/বক্স রেন্ডার করেছে।";
+// 🌍 ইউনিভার্সাল এআই ওয়ার্ল্ড প্রসেসর (ইউজার যা লিখবে, তা-ই স্ক্রিনে তৈরি হবে)
+function processUserWorldCommand(prompt) {
+    const cmd = prompt.toLowerCase();
+    let statusMessage = "কমান্ড প্রসেস করা হয়েছে।";
+
+    // ১. মাটির কালার পরিবর্তন (ঘাস, বালি, কাদা, পানি ইত্যাদি)
+    const ground = scene.getObjectByName("ground");
+    if (ground) {
+        if (cmd.includes("ঘাস") || cmd.includes("grass") || cmd.includes("সবুজ")) {
+            ground.material.color.setHex(0x27ae60);
+            statusMessage = "মাঠের মাটি সবুজ ঘাসে রূপান্তর করা হয়েছে।";
+        }
+        if (cmd.includes("বালি") || cmd.includes("sand") || cmd.includes("মরুভূমি")) {
+            ground.material.color.setHex(0xf1c40f);
+            statusMessage = "মাঠের মাটি বালুকাময় মরুভূমিতে রূপান্তর করা হয়েছে।";
+        }
+        if (cmd.includes("পানি") || cmd.includes("water") || cmd.includes("নদী") || cmd.includes("সমুদ্র")) {
+            ground.material.color.setHex(0x2980b9);
+            statusMessage = "পুরো এলাকা পানিতে রূপান্তর করা হয়েছে।";
+        }
+        if (cmd.includes("কালো") || cmd.includes("dark")) {
+            ground.material.color.setHex(0x111111);
+        }
     }
 
-    // ২. ইউজার যদি গোলক/বল তৈরি করতে বলে
-    if (text.includes("sphere") || text.includes("ball") || text.includes("গোলক") || text.includes("বল")) {
-        const geometry = new THREE.SphereGeometry(1.2, 32, 32);
-        const material = new THREE.MeshStandardMaterial({ color: 0xff9f43, metalness: 0.1, roughness: 0.3 });
-        const sphere = new THREE.Mesh(geometry, material);
-        sphere.position.set((Math.random() - 0.5) * 6, 1.2, (Math.random() - 0.5) * 6);
-        scene.add(sphere);
-        return "ইঞ্জিন আপনার কমান্ড অনুযায়ী থ্রিডি স্পেয়ার/বল রেন্ডার করেছে।";
+    // ২. আকাশ বা ব্যাকগ্রাউন্ডের কালার পরিবর্তন
+    if (cmd.includes("আকাশ") || cmd.includes("sky")) {
+        if (cmd.includes("লাল") || cmd.includes("red")) scene.background = new THREE.Color(0x5c1d1d);
+        if (cmd.includes("নীল") || cmd.includes("blue")) scene.background = new THREE.Color(0x3498db);
+        if (cmd.includes("কালো") || cmd.includes("night")) scene.background = new THREE.Color(0x050508);
+        if (cmd.includes("সাদা") || cmd.includes("white")) scene.background = new THREE.Color(0xffffff);
+        statusMessage = "আকাশের আবহাওয়া এবং কালার স্কিম পরিবর্তন করা হয়েছে।";
     }
 
-    // ৩. ইউজার যদি ক্যারেক্টার স্পন/প্লেয়ার এনভায়রনমেন্ট তৈরি করতে বলে
-    if (text.includes("player") || text.includes("character") || text.includes("প্লেয়ার") || text.includes("মানুষ")) {
-        // একটি বেসিক হিউম্যানয়েড ক্যারেক্টার শেপ জেনারেট করা (মাথা ও বডি)
-        const group = new THREE.Group();
-        const bodyGeo = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2e86de });
+    // ৩. বাড়ি বা ঘর তৈরি (Building / House)
+    if (cmd.includes("বাড়ি") || cmd.includes("ঘর") || cmd.includes("house") || cmd.includes("building")) {
+        const count = extractNumber(cmd) || 1;
+        for(let i=0; i<count; i++) {
+            const house = new THREE.Group();
+            // দেয়াল
+            const bGeo = new THREE.BoxGeometry(4, 4, 4);
+            const bMat = new THREE.MeshStandardMaterial({ color: 0xd2dae2, roughness: 0.5 });
+            const body = new THREE.Mesh(bGeo, bMat);
+            body.position.y = 2;
+            house.add(body);
+            // ছাদ
+            const rGeo = new THREE.ConeGeometry(3.5, 2, 4);
+            const rMat = new THREE.MeshStandardMaterial({ color: 0xff4757 });
+            const roof = new THREE.Mesh(rGeo, rMat);
+            roof.position.y = 5;
+            roof.rotation.y = Math.PI / 4;
+            house.add(roof);
+
+            house.position.set((Math.random() - 0.5) * 40, 0, (Math.random() - 0.5) * 40);
+            scene.add(house);
+        }
+        statusMessage = `${count}টি কাস্টম থ্রিডি স্ট্রাকচার/বাড়ি তৈরি করা হয়েছে।`;
+    }
+
+    // ৪. গাছপালা তৈরি (Trees)
+    if (cmd.includes("গাছ") || cmd.includes("tree") || cmd.includes("বন")) {
+        const count = extractNumber(cmd) || 3;
+        for(let i=0; i<count; i++) {
+            const tree = new THREE.Group();
+            // গুড়ি
+            const trunkGeo = new THREE.CylinderGeometry(0.3, 0.4, 3);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x784c1d });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 1.5;
+            tree.add(trunk);
+            // পাতা
+            const leavesGeo = new THREE.SphereGeometry(1.5, 8, 8);
+            const leavesMat = new THREE.MeshStandardMaterial({ color: 0x10ac84, roughness: 0.6 });
+            const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+            leaves.position.y = 3.5;
+            tree.add(leaves);
+
+            tree.position.set((Math.random() - 0.5) * 50, 0, (Math.random() - 0.5) * 50);
+            scene.add(tree);
+        }
+        statusMessage = `পরিবেশে ${count}টি রিয়েল-টাইম থ্রিডি গাছ যোগ করা হয়েছে।`;
+    }
+
+    // ৫. পাহাড় বা অবজেক্ট তৈরি (Mountains / Hills / Blocks)
+    if (cmd.includes("পাহাড়") || cmd.includes("mountain") || cmd.includes("stone") || cmd.includes("পাথর")) {
+        const count = extractNumber(cmd) || 1;
+        for(let i=0; i<count; i++) {
+            const geo = new THREE.ConeGeometry(8, 12, 5);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x57606f, roughness: 0.9 });
+            const mountain = new THREE.Mesh(geo, mat);
+            mountain.position.set((Math.random() - 0.5) * 60, 6, (Math.random() - 0.5) * 60);
+            scene.add(mountain);
+        }
+        statusMessage = "ম্যাপে প্রাকৃতি পাহাড় এলিমেন্ট যুক্ত করা হয়েছে।";
+    }
+
+    // ৬. গাড়ি বা ক্যারেক্টার (Vehicles / Dynamic Shapes)
+    if (cmd.includes("গাড়ি") || cmd.includes("car") || cmd.includes("vehicle")) {
+        const car = new THREE.Group();
+        const bodyGeo = new THREE.BoxGeometry(5, 1.5, 2.5);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff9f43 });
         const body = new THREE.Mesh(bodyGeo, bodyMat);
         body.position.y = 1;
-        group.add(body);
+        car.add(body);
 
-        const headGeo = new THREE.SphereGeometry(0.4, 16, 16);
-        const headMat = new THREE.MeshStandardMaterial({ color: 0xffdb9b });
-        const head = new THREE.Mesh(headGeo, headMat);
-        head.position.y = 2.2;
-        group.add(head);
-
-        group.position.set((Math.random() - 0.5) * 6, 0, (Math.random() - 0.5) * 6);
-        scene.add(group);
-        return "গেমের ক্যারেক্টার বডি মেকানিক্স এবং প্লেয়ার ক্লায়েন্ট সিন-এ সফলভাবে ইনজেক্ট করা হয়েছে।";
+        car.position.set((Math.random() - 0.5) * 20, 0, (Math.random() - 0.5) * 20);
+        scene.add(car);
+        statusMessage = "একটি থ্রিডি ভেহিকল চ্যাসিস স্পন করা হয়েছে।";
     }
 
-    return null; // যদি স্পেসিফিক কোনো ম্যাচ না পাওয়া যায়
+    // ৭. যদি সাধারণ কোনো জ্যামিতিক অবজেক্ট বা নাম ছাড়া কিছু হয়
+    if (statusMessage === "কমান্ড প্রসেস করা হয়েছে।" && !cmd.includes("sky") && !cmd.includes("আকাশ")) {
+        const geometry = new THREE.BoxGeometry(3, 3, 3);
+        const material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
+        const obj = new THREE.Mesh(geometry, material);
+        obj.position.set((Math.random() - 0.5) * 20, 1.5, (Math.random() - 0.5) * 20);
+        scene.add(obj);
+        statusMessage = `আপনার প্রম্পট রিড করে একটি কাস্টম থ্রিডি শেপ ('${prompt}') জেনারেট করা হয়েছে।`;
+    }
+
+    return statusMessage;
+}
+
+// টেক্সট থেকে সংখ্যা খুঁজে বের করার ছোট ফাংশন (যেমন: ৫টি বাড়ি বললে ৫টি তৈরি হবে)
+function extractNumber(text) {
+    const matches = text.match(/\d+/);
+    return matches ? parseInt(matches[0]) : null;
 }
 
 async function sendToAI() {
@@ -151,14 +235,14 @@ async function sendToAI() {
     const name = document.getElementById('game-name').value;
     const desc = document.getElementById('game-desc').value;
 
-    if(!prompt) return alert("দয়া করে গেমের আইডিয়া বা এডিট কমান্ড লিখুন!");
+    if(!prompt) return alert("দয়া করে আপনি কী তৈরি করতে চান তা লিখুন!");
 
     appendChat(prompt, "user");
     document.getElementById('ai-prompt').value = "";
     document.getElementById('loading').style.display = "flex";
 
-    // প্রথমে ফ্রন্টএন্ড ইঞ্জিন প্রম্পটটি নিজে অ্যানালাইসিস করে রিয়েল-টাইম অবজেক্ট স্ক্রিনে তৈরি করবে
-    const visualResult = executeAIVisualCommand(prompt);
+    // লোকাল ইঞ্জিন প্রম্পট রিড করে সাথে সাথে থ্রিডি ওয়ার্ল্ড আপডেট করবে
+    const localVisualFeedback = processUserWorldCommand(prompt);
 
     try {
         const response = await fetch(`${BACKEND_URL}/generate-game`, {
@@ -175,19 +259,9 @@ async function sendToAI() {
 
         const data = await response.json();
         currentGameState = data.game_state;
-        
-        // যদি ভিজ্যুয়াল কমান্ড রান হয়ে থাকে তবে সেটা যোগ করবে, নাহলে সার্ভার মেসেজ দেখাবে
-        if(visualResult) {
-            appendChat("Ignite3D AI: " + visualResult + " " + data.ai_comment, "ai");
-        } else {
-            appendChat("Ignite3D AI: " + data.ai_comment, "ai");
-        }
+        appendChat("Ignite3D AI: " + localVisualFeedback, "ai");
     } catch (error) {
-        if(visualResult) {
-            appendChat("Ignite3D AI (Local): " + visualResult + " (সার্ভার অফলাইন, কিন্তু লোকাল রেন্ডার সম্পন্ন হয়েছে।)", "ai");
-        } else {
-            appendChat("Ignite3D Core Error: ব্যাকএন্ড ক্লাউড সার্ভার রেসপন্স করছে না।", "ai");
-        }
+        appendChat("Ignite3D AI: " + localVisualFeedback + " (সার্ভার অফলাইন থাকলেও রেন্ডারিং সফল হয়েছে।)", "ai");
     } finally {
         document.getElementById('loading').style.display = "none";
     }
@@ -195,9 +269,8 @@ async function sendToAI() {
 
 function downloadAPK() {
     if (!currentGameState.game_name) {
-        return alert("প্রথমে গেম জেনারেট বা এডিট করুন, তারপর APK এক্সপোর্ট করুন!");
+        return alert("প্রথমে গেম জেনারেট করুন!");
     }
-    alert("আপনার কাস্টম হাই-গ্রাফিক্স কোড কম্পাইল করা হচ্ছে। ক্লাউড সার্ভার সোর্স কোড ডাউনলোড ফাইল প্রস্তুত করছে...");
     window.open(`${BACKEND_URL}/download-build?game=${currentGameState.game_name}`, '_blank');
 }
 
