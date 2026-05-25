@@ -8,90 +8,65 @@ function init3D() {
     const zone = document.getElementById('preview-zone');
     if (!zone) return;
     
-    // ১. সিন (Scene) তৈরি
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0d0e12); // নতুন মিনিমাল ডার্ক ব্যাকগ্রাউন্ড
+    scene.background = new THREE.Color(0x0d0e12);
 
-    // ২. ক্যামেরা (Camera) সেটআপ - অল ডিভাইস ফ্রেন্ডলি ভিউ
     camera = new THREE.PerspectiveCamera(60, zone.clientWidth / zone.clientHeight, 0.1, 1000);
-    camera.position.set(0, 4, 8);
+    camera.position.set(0, 5, 10);
 
-    // ৩. রেন্ডারার (Renderer) - মোবাইল ও হাই-এন্ড স্ক্রিন অপ্টিমাইজড
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setSize(zone.clientWidth, zone.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // অতিরিক্ত পিক্সেল ড্রপ কমিয়ে পারফরম্যান্স বাড়াবে
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     zone.appendChild(renderer.domElement);
 
-    // ৪. লাইটিং (Lighting) - ৩ডি অবজেক্ট উজ্জ্বল দেখানোর জন্য
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // সবদিক থেকে সমান আলো
+    // লাইটিং
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
     scene.add(ambientLight);
     
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8); // রোদের মতো ডিরেকশনাল আলো
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
     dirLight.position.set(10, 20, 15);
-    dirLight.castShadow = true;
     scene.add(dirLight);
 
-    // ৫. গ্রাউন্ড বা মেঝের গ্রিড (পাবজি/ফ্রি-ফায়ারের ভার্চুয়াল গ্রাউন্ড ফিল্ড)
+    // গেমের ভার্চুয়াল গ্রাউন্ড ফিল্ড গ্রিড
     const gridHelper = new THREE.GridHelper(60, 60, 0x444444, 0x222222);
-    gridHelper.position.y = -0.01;
+    gridHelper.position.y = 0;
     scene.add(gridHelper);
 
-    // ৬. থ্রিডি ফাইল লোডার (GLTFLoader)
     loader = new THREE.GLTFLoader();
 
-    // ৭. ক্যামেরা টাচ ও মাউস কন্ট্রোল (OrbitControls) - "টিভি" প্রিভিউ স্ক্রিন ঘুরিয়ে দেখার ম্যাজিক
-    // এটি থ্রিডি লাইব্রেরি থেকে স্ক্রিপ্ট আকারে index.htm এ অলরেডি ইন্টিগ্রেট করা প্যানেল রিড করবে
+    // OrbitControls লোড করা (ঘুরিয়ে দেখার জন্য)
     if (typeof THREE.OrbitControls !== 'undefined') {
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        setupControls();
     } else {
-        // যদি মেইন লাইব্রেরি ব্যাকআপ হিসেবে লোড হতে সময় নেয়, তবে সিডিএন থেকে ইনস্ট্যান্ট তৈরি করবে
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
-        script.onload = () => {
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2 - 0.05; // মাটিকে নিচে যেতে দেবে না
-            controls.minDistance = 2;
-            controls.maxDistance = 50;
-        };
+        script.onload = setupControls;
         document.head.appendChild(script);
     }
 
-    // ৮. রেসপনসিভ স্ক্রিন হ্যান্ডলার (মোবাইল/ট্যাবলেট স্ক্রিন ঘুরিয়ে ধরলে বা সাইজ বদলালে অটো ফিট হবে)
     window.addEventListener('resize', () => {
-        const width = zone.clientWidth;
-        const height = zone.clientHeight;
-        
-        camera.aspect = width / height;
+        camera.aspect = zone.clientWidth / zone.clientHeight;
         camera.updateProjectionMatrix();
-        
-        renderer.setSize(width, height);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(zone.clientWidth, zone.clientHeight);
     });
 
-    // ৯. অ্যানিমেশন লুপ (গেম এনভায়রনমেন্ট ফ্রেম রেন্ডারার)
     function animate() {
         requestAnimationFrame(animate);
-        
-        if (controls) controls.update(); // মাউস বা টাচ মুভমেন্ট আপডেট
-        
-        scene.traverse((child) => {
-            if (child.isMesh && child.name !== "ground" && !child.isGridHelper) {
-                // অবজেক্টগুলো হালকা রিদমে ঘুরবে যতক্ষণ না ইউজার নিজে টাচ করছে
-                if(!controls || !controls.state == -1) {
-                    child.rotation.y += 0.002;
-                }
-            }
-        });
-        
+        if (controls) controls.update();
         renderer.render(scene, camera);
     }
     animate();
 }
 
-// ফাইল আপলোড ও থ্রিডি প্রিভিউ জোন ইজেকশন লজিক
+function setupControls() {
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 - 0.05;
+}
+
+// গিটহাব ফাইল আপলোড হ্যান্ডলার
 document.getElementById('file-input').addEventListener('change', function(e) {
     const files = e.target.files;
     for(let file of files) {
@@ -101,31 +76,8 @@ document.getElementById('file-input').addEventListener('change', function(e) {
         const url = URL.createObjectURL(file);
         loader.load(url, function(gltf) {
             const model = gltf.scene;
-            
-            // মডেলের সাইজ সব ডিভাইসের জন্য অটো-স্কেল (Auto Scale) করা
-            const box = new THREE.Box3().setFromObject(model);
-            const size = box.getSize(new THREE.Vector3()).length();
-            const center = box.getCenter(new THREE.Vector3());
-            
-            model.position.x += (Math.random() - 0.5) * 5;
-            model.position.z += (Math.random() - 0.5) * 5;
-            model.position.y = 0; // মাটির উপরে স্থাপন
-            
-            // সাইজ খুব বড় বা ছোট হলে স্ট্যান্ডার্ড ১.৫ ইউনিটে ফিট করবে
-            if(size > 5) {
-                model.scale.setScalar(5 / size);
-            }
-
+            model.position.set((Math.random() - 0.5) * 5, 0, (Math.random() - 0.5) * 5);
             scene.add(model);
-            
-            // ক্যামেরাকে নতুন মডেলের দিকে ফোকাস করানো
-            if(controls) {
-                controls.target.set(model.position.x, 1, model.position.z);
-            }
-            
-        }, undefined, function(error) {
-            console.error("3D Model loading failed:", error);
-            appendChat("ইঞ্জিন কোড এরর: .glb ফাইলটি রেন্ডার করা যায়নি।", "ai");
         });
     }
 });
@@ -140,6 +92,60 @@ function appendChat(text, sender) {
     chat.scrollTop = chat.scrollHeight;
 }
 
+// 🤖 এআই প্রম্পট অ্যানালাইসিস এবং রিয়েল-টাইম থ্রিডি অবজেক্ট জেনারেশন ইঞ্জিন
+function executeAIVisualCommand(prompt) {
+    const text = prompt.toLowerCase();
+    
+    // ১. ইউজার যদি বক্স/কিউব বা ঘর তৈরি করতে বলে
+    if (text.includes("box") || text.includes("cube") || text.includes("বক্স") || text.includes("বাক্স")) {
+        const geometry = new THREE.BoxGeometry(2, 2, 2);
+        let color = 0xff4757; // ডিফল্ট লাল রঙ
+        
+        if (text.includes("blue") || text.includes("নীল")) color = 0x00d2d3;
+        if (text.includes("green") || text.includes("সবুজ")) color = 0x10ac84;
+        if (text.includes("white") || text.includes("সাদা")) color = 0xffffff;
+        
+        const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.set((Math.random() - 0.5) * 6, 1, (Math.random() - 0.5) * 6);
+        scene.add(cube);
+        return "ইঞ্জিন আপনার কমান্ড অনুযায়ী থ্রিডি কিউব/বক্স রেন্ডার করেছে।";
+    }
+
+    // ২. ইউজার যদি গোলক/বল তৈরি করতে বলে
+    if (text.includes("sphere") || text.includes("ball") || text.includes("গোলক") || text.includes("বল")) {
+        const geometry = new THREE.SphereGeometry(1.2, 32, 32);
+        const material = new THREE.MeshStandardMaterial({ color: 0xff9f43, metalness: 0.1, roughness: 0.3 });
+        const sphere = new THREE.Mesh(geometry, material);
+        sphere.position.set((Math.random() - 0.5) * 6, 1.2, (Math.random() - 0.5) * 6);
+        scene.add(sphere);
+        return "ইঞ্জিন আপনার কমান্ড অনুযায়ী থ্রিডি স্পেয়ার/বল রেন্ডার করেছে।";
+    }
+
+    // ৩. ইউজার যদি ক্যারেক্টার স্পন/প্লেয়ার এনভায়রনমেন্ট তৈরি করতে বলে
+    if (text.includes("player") || text.includes("character") || text.includes("প্লেয়ার") || text.includes("মানুষ")) {
+        // একটি বেসিক হিউম্যানয়েড ক্যারেক্টার শেপ জেনারেট করা (মাথা ও বডি)
+        const group = new THREE.Group();
+        const bodyGeo = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2e86de });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 1;
+        group.add(body);
+
+        const headGeo = new THREE.SphereGeometry(0.4, 16, 16);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xffdb9b });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 2.2;
+        group.add(head);
+
+        group.position.set((Math.random() - 0.5) * 6, 0, (Math.random() - 0.5) * 6);
+        scene.add(group);
+        return "গেমের ক্যারেক্টার বডি মেকানিক্স এবং প্লেয়ার ক্লায়েন্ট সিন-এ সফলভাবে ইনজেক্ট করা হয়েছে।";
+    }
+
+    return null; // যদি স্পেসিফিক কোনো ম্যাচ না পাওয়া যায়
+}
+
 async function sendToAI() {
     const prompt = document.getElementById('ai-prompt').value;
     const name = document.getElementById('game-name').value;
@@ -149,7 +155,10 @@ async function sendToAI() {
 
     appendChat(prompt, "user");
     document.getElementById('ai-prompt').value = "";
-    document.getElementById('loading').style.display = "flex"; // মডার্ন ফ্লেক্স লোডার অ্যাক্টিভেশন
+    document.getElementById('loading').style.display = "flex";
+
+    // প্রথমে ফ্রন্টএন্ড ইঞ্জিন প্রম্পটটি নিজে অ্যানালাইসিস করে রিয়েল-টাইম অবজেক্ট স্ক্রিনে তৈরি করবে
+    const visualResult = executeAIVisualCommand(prompt);
 
     try {
         const response = await fetch(`${BACKEND_URL}/generate-game`, {
@@ -166,9 +175,19 @@ async function sendToAI() {
 
         const data = await response.json();
         currentGameState = data.game_state;
-        appendChat("Ignite3D AI: " + data.ai_comment, "ai");
+        
+        // যদি ভিজ্যুয়াল কমান্ড রান হয়ে থাকে তবে সেটা যোগ করবে, নাহলে সার্ভার মেসেজ দেখাবে
+        if(visualResult) {
+            appendChat("Ignite3D AI: " + visualResult + " " + data.ai_comment, "ai");
+        } else {
+            appendChat("Ignite3D AI: " + data.ai_comment, "ai");
+        }
     } catch (error) {
-        appendChat("Ignite3D Core Error: ব্যাকএন্ড ক্লাউড সার্ভার রেসপন্স করছে না।", "ai");
+        if(visualResult) {
+            appendChat("Ignite3D AI (Local): " + visualResult + " (সার্ভার অফলাইন, কিন্তু লোকাল রেন্ডার সম্পন্ন হয়েছে।)", "ai");
+        } else {
+            appendChat("Ignite3D Core Error: ব্যাকএন্ড ক্লাউড সার্ভার রেসপন্স করছে না।", "ai");
+        }
     } finally {
         document.getElementById('loading').style.display = "none";
     }
@@ -182,5 +201,4 @@ function downloadAPK() {
     window.open(`${BACKEND_URL}/download-build?game=${currentGameState.game_name}`, '_blank');
 }
 
-// ডোমেস্টিক উইন্ডো লোড ট্রিগার
 window.onload = init3D;
