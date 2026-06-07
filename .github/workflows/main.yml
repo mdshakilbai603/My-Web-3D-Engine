@@ -1,0 +1,33 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch: # এর মাধ্যমে আপনি ১ ক্লিকে APK বানাতে পারবেন
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # আপনার প্রজেক্টের বিল্ড কমান্ড অনুযায়ী নিচের অংশ কাজ করবে
+      - name: Build APK
+        run: |
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          else
+            echo "No gradle wrapper found. Make sure your android files are in the root directory."
+          fi
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-app-apk
+          path: app/build/outputs/apk/debug/*.apk
